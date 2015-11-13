@@ -1,30 +1,39 @@
 (ns radical-agility
   (:refer-clojure :exclude [==])
-  (:require [clojure.core.logic :refer :all]
+  (:require [clojure.core.logic :refer [ruleset]]
             [magnificent.logic :refer :all]
-            [magnificent.tools :as tools]))
+            [magnificent.tools]))
 
-(defneeds
-  teams tools/get-teams
-  accounts tools/get-accounts)
+; 1. on request, the corresponding rule will be found
+; 2. if a token was given, it gets resolved via JWT or tokeninfo
+; 3. the resulting token information will be merged with the general context information
+; 4. :require picks the defined information from the merged context and defines them as logic variables.
+; 4a. for production, all variable will be bound via constraints to the actual context values
+; 4b. for testing, the variables will not be bound and core.logic can show you possible evaluations
+; 5. all :resolve keys will be resolved and added as fresh constraints as well
 
+(ruleset
 
-(defapi "pierone"
+  :with-resolvers
+    {:teams magnificent.tools/get-teams
+     :accounts magnificent.tools/get-accounts})
 
-  (defrule :get "/ping"
-    :requires [team] :needs [teams]
-    (membero team teams))
+  ("pierone"
 
-  (defrule :get "/ping2"
-    :requires [team scopes] :needs [teams]
-    (conde
-      [(membero team teams)]
-      [(membero "application.write" scopes)]))
+    (:get "/ping"
+      :require [team] :resolve [teams]
+      (membero team teams))
 
-  (defrule :get "/ping3"
-    :requires [realm]
-    (== "/services" realm))
+    (:get "/ping2"
+      :require [team scopes] :resolve [teams]
+      (conde
+        [(membero team teams)]
+        [(membero "application.write" scopes)]))
 
-  (defrule :get "/ping4"
-    :requires [uid]))
+    (:get "/ping3"
+      :require [realm]
+      (== "/services" realm))
+
+    (:get "/ping4"
+      :require [uid]))
 
