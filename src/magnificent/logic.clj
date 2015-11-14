@@ -13,8 +13,8 @@
 
 (defmacro defrules
   "Translates the configuration syntax to executable code."
-  [api & s]
-  (let [[resolvers apis] (get-opt :with-resolvers {} s)]
+  [& body]
+  (let [[resolvers apis] (get-opt :with-resolvers {} body)]
     ; process each api
     (for [[api & rules] apis]
       ; process each rule

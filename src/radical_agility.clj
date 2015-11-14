@@ -1,7 +1,7 @@
 (ns radical-agility
   (:refer-clojure :exclude [==])
-  (:require [clojure.core.logic :refer [ruleset]]
-            [magnificent.logic :refer :all]
+  (:require [clojure.core.logic :refer :all]
+            [magnificent.logic :refer [ruleset]]
             [magnificent.tools]))
 
 ; 1. on request, the corresponding rule will be found
