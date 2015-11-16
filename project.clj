@@ -24,7 +24,9 @@
   :main ^:skip-aot magnificent.core
   
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}}
+  :profiles {:uberjar {:aot :all}
+
+             :dev {:dependencies [[ring/ring-mock "0.3.0"]]}}
   
   :release-tasks [["vcs" "assert-committed"]
                   ["clean"]
