@@ -1,8 +1,11 @@
 ; contains common tools for rule evaluation like fetching list of teams
 (ns magnificent.tools)
 
-(defn get-teams [tokeninfo]
+(defn get-oauth2-tokeninfo [request]
+  {})
+
+(defn get-teams [request]
   [])
 
-(defn get-accounts [tokeninfo]
+(defn get-accounts [request]
   [])

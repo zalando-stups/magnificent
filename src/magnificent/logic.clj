@@ -1,6 +1,7 @@
 ; implements all bridging logic between magnificent and core.logic
 (ns magnificent.logic
-  (:require [clojure.core.logic :as l]))
+  (:require [clojure.core.logic :as l]
+            [magnificent.tools :as tools]))
 
 (defn get-opt
   "Takes a keyword k and checks if its the first in the sequence s. If so, returns
@@ -12,12 +13,13 @@
     [d s]))
 
 (defmacro policy [& body]
-  (let [[with-context body] (get-opt :with-context [] body)
-        [with-resolvers body] (get-opt :with-resolvers {} body)
+  (let [[with-token-resolver body] (get-opt :with-token-resolver tools/get-oauth2-tokeninfo body)
+        [with-context body] (get-opt :with-context [] body)
+        [with-context-resolvers body] (get-opt :with-context-resolvers {} body)
         ; construct list of all query arguments with the defaults and the custom ones
         lvars (-> [(symbol "http-api") (symbol "http-method") (symbol "http-path-key")]
                   (concat with-context)
-                  (concat (keys with-resolvers)))]
+                  (concat (keys with-context-resolvers)))]
     `(defn ~(symbol "policy-fn") [request#]
        (l/run* [~@lvars]
                (l/conde

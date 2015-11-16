@@ -15,9 +15,9 @@
 ;   (run* [api http-method http-path-key team teams accounts])
 
 (policy
-  :with-context [team]
+  :with-context [team scopes]
 
-  :with-resolvers
+  :with-context-resolvers
   {teams    magnificent.tools/get-teams
    accounts magnificent.tools/get-accounts}
 
