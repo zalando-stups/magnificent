@@ -11,32 +11,24 @@
     [(second s) (drop 2 s)]
     [d s]))
 
-(defn process-rule
-  "Generates a core.logic based function to evaluate all given constraints."
-  [api http-method http-path-key constraints resolvers]
-  (let [rule-key [api http-method http-path-key]
-        [requires constraints] (get-opt :requires [] constraints)
-        [resolves constraints] (get-opt :resolves [] constraints)
-        ; TODO resolve resolves with resolvers
-        ; TODO add resolves to requires
-        ; TODO add == constraints to constraints for requires and resolves
-        ]
-    ; emit function that run* the rules later on
-    [rule-key
-     `(fn [request#]
-        (l/run* ~(if (empty? requires) [(symbol "_")] [~@requires])
-                ~@constraints))]))
+(defmacro policy [& body]
+  (let [[with-context body] (get-opt :with-context [] body)
+        [with-resolvers body] (get-opt :with-resolvers {} body)
+        ; construct list of all query arguments with the defaults and the custom ones
+        lvars (-> [(symbol "http-api") (symbol "http-method") (symbol "http-path-key")]
+                  (concat with-context)
+                  (concat (keys with-resolvers)))]
+    `(defn ~(symbol "policy-fn") [request#]
+       (l/run* [~@lvars]
+               (l/conde
+                 ~(map #(conj [] %) body))))))
 
-(defmacro ruleset
-  "Translates the configuration syntax to executable code. Will replace itself with a
-   'rules' definition; a map with request-keys to rule function."
-  [& body]
-  (let [[resolvers apis] (get-opt :with-resolvers {} body)]
-    `(def rules
-       ~(into {}
-          (apply concat
-            ; process each api
-            (for [[api & rules] apis]
-                ; process each rule
-                (for [[http-method http-path-key & constraints] rules]
-                  (process-rule api http-method http-path-key constraints resolvers))))))))
+(defmacro api [name & body]
+  `[(l/== ~(symbol "http-api") ~name)
+    (l/conde
+      ~(map #(conj [] %) body))])
+
+(defmacro req [http-method http-path-key & body]
+  `[(l/== ~(symbol "http-method") ~http-method)
+    (l/== ~(symbol "http-path-key") ~http-path-key)
+    ~@body])

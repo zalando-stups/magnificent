@@ -14,22 +14,19 @@
 
 (defn authorize
   "Processes each request and returns an authorization decision."
-  [request rules]
-  (let [rule-key [(:api request) (keyword (:http-method request)) (:http-path-key request)]
-        rule (get rules rule-key)]
-    (if rule
-      (try
-        (rule request)
-        (catch Exception e
-          ))
-      (json-response 400 "Rule for API endpoint not defined."))))
+  [request policy-fn]
+  (try
+    (policy-fn request)
+    (catch Exception e
+      (.printStackTrace e)
+      (json-response 500 "Internal Server Error"))))
 
-(defn load-rules
+(defn load-policy-fn
   "Loads the ruleset with the given name and returns the initilized configuration object."
   [ruleset]
   (let [ruleset (symbol ruleset)]
     (require [ruleset])
-    (symbol ruleset "rules")))
+    (symbol ruleset "policy-fn")))
 
 (defn ring-handler
   "Routes requests to this http endpoint to its correct implementation."
@@ -47,11 +44,11 @@
       (json-response 404 "Unknown endpoint."))))
 
 (defn -main
-  "The application first loads the given 'ruleset' and starts the HTTP endpoint afterwards."
+  "The application first loads the given $POLICY and starts the HTTP endpoint afterwards."
   [& args]
-  (let [ruleset (or (System/getenv "RULESET") "radical-agility")
-        rules (load-rules ruleset)]
+  (let [policy-name (or (System/getenv "POLICY") "radical-agility")
+        policy-fn (load-policy-fn policy-name)]
     (httpkit/run-server
-      (ring-handler rules)
+      (ring-handler policy-fn)
       {:port 8080})
-    (println "Listening on :8080 for requests on POST /stups-api/authorize using ruleset \"" ruleset "\"")))
+    (println "Listening on :8080 for requests on POST /stups-api/authorize using policy \"" policy-name "\"")))
