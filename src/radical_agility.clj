@@ -4,7 +4,7 @@
             [magnificent.logic :refer :all]
             [magnificent.tools]))
 
-; default lvars are "api" "http-method" and "http-path-key", they are also automatically constraint in prod mode
+; default lvars are "http-api" "http-method" and "http-path-key", they are also automatically constraint in prod mode
 ; if a token was given, it will be resolved and merged with the context
 
 ; :with-context vars will be added as query parameters and also as constraints in prod mode
@@ -12,7 +12,9 @@
 ;                 added as constraint
 
 ; generates:
-;   (run* [api http-method http-path-key team teams accounts])
+;   (defn policy-fn [request]
+;     (run* [http-api http-method http-path-key team scopes teams accounts]
+;       ...))
 
 (policy
   :with-context [team scopes]

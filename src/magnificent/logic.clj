@@ -23,12 +23,12 @@
     `(defn ~(symbol "policy-fn") [request#]
        (l/run* [~@lvars]
                (l/conde
-                 ~(map #(conj [] %) body))))))
+                 ~@body)))))
 
 (defmacro api [name & body]
   `[(l/== ~(symbol "http-api") ~name)
     (l/conde
-      ~(map #(conj [] %) body))])
+      ~@body)])
 
 (defmacro req [http-method http-path-key & body]
   `[(l/== ~(symbol "http-method") ~http-method)
