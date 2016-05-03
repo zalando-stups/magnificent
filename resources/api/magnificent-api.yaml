@@ -1,0 +1,227 @@
+swagger: "2.0"
+
+info:
+  version: "0.1"
+  title: Magnificent API
+  description: User/Team/Account abstraction
+
+basePath: /
+
+consumes:
+  - application/json
+produces:
+  - application/json
+
+definitions:
+  UserInfo:
+    type: object
+    properties:
+      id:
+        type: string
+        example: npiccolotto
+        required: true
+      name:
+        type: string
+        example: Nikolaus Piccolotto
+      email:
+        type: string
+        example: npiccolotto@zalando.de
+      realm:
+        type: string
+        example: employees
+        required: true
+  Team:
+    type: object
+    properties:
+      id:
+        type: string
+        example: stups
+      mail:
+        type: array
+        items:
+          type: string
+          example: stups@zalando.de
+      member:
+        type: array
+        items:
+          type: string
+          example: npiccolotto
+      accounts:
+        type: array
+        items:
+          $ref: '#/definitions/CloudAccount'
+  AuthorizationAction:
+    type: object
+    properties:
+      type:
+        type: string
+        example: policy
+      payload:
+        type: object
+  CloudAccount:
+    type: object
+    properties:
+      id:
+        type: string
+        example: '1341351515'
+      name:
+        type: string
+        example: stups
+      disabled:
+        type: boolean
+        example: false
+      type:
+        type: string
+        example: aws
+      owner:
+        type: string
+        example: stups
+        description: The owning team
+
+parameters:
+  UserId:
+    description: The user identifier
+    type: string
+    name: user
+    in: path
+    required: true
+    pattern: '[a-z]+'
+  AccountId:
+    description: The account identifier
+    type: string
+    name: account
+    in: path
+    required: true
+  TeamId:
+    description: The team identifier
+    type: string
+    name: team
+    in: path
+    required: true
+  AuthorizationRequest:
+    description: The HTTP request to authorize
+    schema:
+      $ref: '#/definitions/AuthorizationAction'
+    name: authrequest
+    in: body
+    required: true
+
+paths:
+
+  '/':
+    get:
+      summary: Application root
+      operationId: org.zalando.stups.friboo.system.http/redirect-to-swagger-ui
+      security:
+        - oauth2: [uid]
+      responses:
+        default:
+          description: "Redirects to /ui/"
+
+  ## AUTH
+
+  '/auth':
+    get:
+      summary: Request authorization to do something. User information is provided in Authorization header.
+      operationId: org.zalando.stups.magnificent.api/get-auth
+      security:
+        - oauth2: [uid]
+      parameters:
+        - $ref: '#/parameters/AuthorizationRequest'
+      responses:
+        200:
+          description: If request was granted
+        403:
+          description: If request was not granted
+
+  ## USER
+
+  '/users/{user}':
+    get:
+      summary: Get information about a human
+      operationId: org.zalando.stups.magnificent.api/get-user
+      security:
+        - oauth2: [uid]
+      parameters:
+        - $ref: '#/parameters/UserId'
+      responses:
+        200:
+          description: Return user information
+          schema:
+            $ref: '#/definitions/UserInfo'
+
+  ## ACCOUNTS
+
+  '/accounts':
+    get:
+      summary: List all accounts
+      operationId: org.zalando.stups.magnificent.api/get-accounts
+      security:
+        - oauth2: [uid]
+      parameters:
+        - name: user
+          in: query
+          type: string
+          description: Only accounts where this user has access to
+      responses:
+        200:
+          description: List of all cloud accounts
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/CloudAccount'
+  '/accounts/{account}':
+    get:
+      summary: Get information about one account
+      operationId: org.zalando.stups.magnificent.api/get-account
+      security:
+        - oauth2: [uid]
+      parameters:
+        - $ref: "#/parameters/AccountId"
+      responses:
+        200:
+          description: List one account
+          schema:
+            $ref: "#/definitions/CloudAccount"
+
+  ## TEAMS
+
+  '/teams':
+    get:
+      summary: List all teams
+      operationId: org.zalando.stups.magnificent.api/get-teams
+      security:
+        - oauth2: [uid]
+      parameters:
+        - name: user
+          in: query
+          type: string
+          description: Only teams where this user is a member
+      responses:
+        200:
+          description: List all teams
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Team'
+  '/teams/{team}':
+    get:
+      summary: Get information about one team
+      operationId: org.zalando.stups.magnificent.api/get-team
+      security:
+        - oauth2: [uid]
+      parameters:
+        - $ref: "#/parameters/TeamId"
+      responses:
+        200:
+          description: List one team
+          schema:
+            $ref: "#/definitions/Team"
+
+securityDefinitions:
+  oauth2:
+    type: oauth2
+    flow: implicit
+    authorizationUrl: https://example.com/oauth2/dialog
+    scopes:
+      uid: Unique identifier of the user accessing the service.
