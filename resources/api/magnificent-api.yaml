@@ -19,7 +19,6 @@ definitions:
       id:
         type: string
         example: npiccolotto
-        required: true
       name:
         type: string
         example: Nikolaus Piccolotto
@@ -29,7 +28,6 @@ definitions:
       realm:
         type: string
         example: employees
-        required: true
   Team:
     type: object
     properties:
@@ -41,7 +39,7 @@ definitions:
         items:
           type: string
           example: stups@zalando.de
-      member:
+      members:
         type: array
         items:
           type: string
@@ -73,19 +71,35 @@ definitions:
       type:
         type: string
         example: aws
+      members:
+        type: array
+        items:
+          type: string
+          example: npiccolotto
       owner:
         type: string
         example: stups
         description: The owning team
 
 parameters:
+  UserRealm:
+    description: The realm of a user
+    type: string
+    name: realm
+    in: path
+    required: true
+  AccountType:
+    description: The type of an account
+    type: string
+    name: type
+    in: path
+    required: true
   UserId:
     description: The user identifier
     type: string
     name: user
     in: path
     required: true
-    pattern: '[a-z]+'
   AccountId:
     description: The account identifier
     type: string
@@ -136,14 +150,29 @@ paths:
 
   ## USER
 
-  '/users/{user}':
+  '/users/{realm}/{user}':
     get:
-      summary: Get information about a human
+      summary: Get information about a user
       operationId: org.zalando.stups.magnificent.api/get-user
       security:
         - oauth2: [uid]
       parameters:
+        - $ref: '#/parameters/UserRealm'
         - $ref: '#/parameters/UserId'
+      responses:
+        200:
+          description: Return user information
+          schema:
+            $ref: '#/definitions/UserInfo'
+        404:
+          description: If no such user exists
+
+  '/users/self':
+    get:
+      summary: Get information about the user this token belongs to
+      operationId: org.zalando.stups.magnificent.api/get-user-self
+      security:
+        - oauth2: [uid]
       responses:
         200:
           description: Return user information
@@ -152,13 +181,14 @@ paths:
 
   ## ACCOUNTS
 
-  '/accounts':
+  '/accounts/{type}':
     get:
       summary: List all accounts
       operationId: org.zalando.stups.magnificent.api/get-accounts
       security:
         - oauth2: [uid]
       parameters:
+        - $ref: '#/parameters/AccountType'
         - name: user
           in: query
           type: string
@@ -170,19 +200,22 @@ paths:
             type: array
             items:
               $ref: '#/definitions/CloudAccount'
-  '/accounts/{account}':
+  '/accounts/{type}/{account}':
     get:
       summary: Get information about one account
       operationId: org.zalando.stups.magnificent.api/get-account
       security:
         - oauth2: [uid]
       parameters:
+        - $ref: '#/parameters/AccountType'
         - $ref: "#/parameters/AccountId"
       responses:
         200:
           description: List one account
           schema:
             $ref: "#/definitions/CloudAccount"
+        404:
+          description: If no such account exists
 
   ## TEAMS
 
@@ -217,6 +250,8 @@ paths:
           description: List one team
           schema:
             $ref: "#/definitions/Team"
+        404:
+          description: If no such team exists
 
 securityDefinitions:
   oauth2:
