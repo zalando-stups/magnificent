@@ -130,7 +130,7 @@ parameters:
     in: path
     required: true
   AuthorizationRequest:
-    description: The HTTP request to authorize
+    description: The request to authorize
     schema:
       $ref: '#/definitions/AuthorizationAction'
     name: authrequest

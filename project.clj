@@ -7,12 +7,9 @@
 
   :min-lein-version "2.0.0"
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 ; used for our rule engine
-                 [org.clojure/core.logic "0.8.10"]
-                 ; small http+json libraries for the web API
-                 [http-kit "2.1.18"]
-                 [cheshire "5.5.0"]]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [clj-http "2.1.0"]
+                 [org.zalando.stups/friboo "1.7.0"]]
 
   :plugins [[io.sarnowski/lein-docker "1.1.0"]
             [org.zalando.stups/lein-scm-source "0.1.0"]]
@@ -21,13 +18,12 @@
                                                       (str "/"))
                                               "stups/magnificent"))}
 
-  :main ^:skip-aot magnificent.core
-  
-  :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}
+  :main ^:skip-aot org.zalando.stups.magnificent.core
+  :uberjar-name "magnificent.jar"
 
+  :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[ring/ring-mock "0.3.0"]]}}
-  
+
   :release-tasks [["vcs" "assert-committed"]
                   ["clean"]
                   ["test"]
