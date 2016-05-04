@@ -13,7 +13,7 @@ produces:
   - application/json
 
 definitions:
-  UserInfo:
+  User:
     type: object
     properties:
       id:
@@ -25,6 +25,15 @@ definitions:
       email:
         type: string
         example: npiccolotto@zalando.de
+      realm:
+        type: string
+        example: employees
+  CondensedUser:
+    type: object
+    properties:
+      id:
+        type: string
+        example: npiccolotto
       realm:
         type: string
         example: employees
@@ -42,12 +51,11 @@ definitions:
       members:
         type: array
         items:
-          type: string
-          example: npiccolotto
+          $ref: '#/definitions/CondensedUser'
       accounts:
         type: array
         items:
-          $ref: '#/definitions/CloudAccount'
+          $ref: '#/definitions/CondensedCloudAccount'
   AuthorizationAction:
     type: object
     properties:
@@ -80,6 +88,15 @@ definitions:
         type: string
         example: stups
         description: The owning team
+  CondensedCloudAccount:
+    type: object
+    properties:
+      id:
+        type: string
+        example: '2553545114'
+      type:
+        type: string
+        example: aws
 
 parameters:
   UserRealm:
@@ -163,7 +180,7 @@ paths:
         200:
           description: Return user information
           schema:
-            $ref: '#/definitions/UserInfo'
+            $ref: '#/definitions/User'
         404:
           description: If no such user exists
 
@@ -177,7 +194,7 @@ paths:
         200:
           description: Return user information
           schema:
-            $ref: '#/definitions/UserInfo'
+            $ref: '#/definitions/User'
 
   ## ACCOUNTS
 
