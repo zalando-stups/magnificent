@@ -43,6 +43,9 @@ definitions:
       id:
         type: string
         example: stups
+      full_name:
+        type: string
+        example: STUPS - STUPS To Unleash Penguin Swarms
       mail:
         type: array
         items:
@@ -56,6 +59,15 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/CondensedCloudAccount'
+  CondensedTeam:
+    type: object
+    properties:
+      id:
+        type: string
+        example: stups
+      full_name:
+        type: string
+        example: STUPS - Penguin Swarms And More
   AuthorizationAction:
     type: object
     properties:
@@ -253,7 +265,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/Team'
+              $ref: '#/definitions/CondensedTeam'
   '/teams/{team}':
     get:
       summary: Get information about one team

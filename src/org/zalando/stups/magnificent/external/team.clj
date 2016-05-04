@@ -3,6 +3,37 @@
             [org.zalando.stups.friboo.ring :as util]
             [com.netflix.hystrix.core :refer [defcommand]]))
 
-(defn get-teams [team-api token])
+(defn condense-team
+  [team]
+  {:id        (:id team)
+   :full_name (:name team)})
 
-(defn get-team [team-api team-id token])
+(defn format-team
+  [team]
+  {:id        (:id team)
+   :full_name (:name team)
+   :mail      (:mail team)
+   :members   (map
+                #({:id % :realm "employees"})
+                (:member team))
+   :accounts  (map
+                #(select-keys % [:id :type])
+                (:infrastructure-accounts team))})
+
+(defcommand get-teams
+  [team-api token]
+  (->>
+    (http/get
+      (util/conpath team-api "/teams")
+      {:oauth-token token})
+    :body
+    (map condense-team)))
+
+(defcommand get-team
+  [team-api team-id token]
+  (->>
+    (http/get
+      (util/conpath team-api "/teams/" team-id)
+      {:oauth-token token})
+    :body
+    format-team))
