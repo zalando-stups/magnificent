@@ -1,5 +1,8 @@
-(ns org.zalando.stups.magnificent.external.team)
+(ns org.zalando.stups.magnificent.external.team
+  (:require [clj-http.client :as http]
+            [org.zalando.stups.friboo.ring :as util]
+            [com.netflix.hystrix.core :refer [defcommand]]))
 
-(def get-teams [team-api token])
+(defn get-teams [team-api token])
 
-(def get-team [team-api team-id token])
+(defn get-team [team-api team-id token])

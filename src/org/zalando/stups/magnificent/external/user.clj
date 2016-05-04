@@ -1,4 +1,7 @@
-(ns org.zalando.stups.magnificent.external.user)
+(ns org.zalando.stups.magnificent.external.user
+  (:require [clj-http.client :as http]
+            [org.zalando.stups.friboo.ring :as util]
+            [com.netflix.hystrix.core :refer [defcommand]]))
 
-(def get-user [user-api realm uid token])
+(defn get-user [user-api realm uid token])
 

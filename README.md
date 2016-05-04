@@ -4,6 +4,14 @@
 
 magnificent is the reference implementation for the [STUPS authorization dependency spec](https://github.com/zalando-stups/dependency-spec).
 
+## Configuring
+
+* `HTTP_TEAM_API`
+* `HTTP_USER_API`
+* `HTTP_ACCOUNT_API`
+* `HTTP_PORT`
+* `HTTP_TOKENINFO_URL`
+
 ## Building
 
     $ lein uberjar
