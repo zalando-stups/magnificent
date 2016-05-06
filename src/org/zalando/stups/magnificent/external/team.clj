@@ -15,7 +15,10 @@
    :full_name (:name team)
    :mail      (:mail team)
    :members   (map
-                #({:id % :realm "employees"})
+                #(assoc
+                  {}
+                  :id %
+                  :realm "employees")
                 (:member team))
    :accounts  (map
                 #(select-keys % [:id :type])
@@ -26,7 +29,8 @@
   (->>
     (http/get
       (util/conpath team-api "/teams")
-      {:oauth-token token})
+      {:oauth-token token
+       :as          :json})
     :body
     (map condense-team)))
 
@@ -35,7 +39,8 @@
   (->>
     (http/get
       (util/conpath team-api "/teams/" team-id)
-      {:oauth-token token})
+      {:oauth-token token
+       :as          :json})
     :body
     format-team))
 

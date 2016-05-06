@@ -6,16 +6,20 @@
 
 (defn format-account
   [account]
-  (->> account
-    (select-keys [:id
-                  :name
-                  :disabled
-                  :type
-                  :members])
-    (update-in
-      [:members]
-      #({:id    (:id %)
-         :realm "employees"}))))
+  (update-in
+    (select-keys account
+      [:id
+       :name
+       :disabled
+       :type
+       :members])
+    [:members]
+    (fn [members]
+      (map
+        #(assoc {}
+          :id (:id %)
+          :realm "employees")
+        members))))
 
 (defn condense-account
   [account]
@@ -25,7 +29,8 @@
   [account-api type account-id token]
   (->> (http/get
          (util/conpath account-api "/accounts/" type "/" account-id)
-         {:oauth-token token})
+         {:oauth-token token
+          :as          :json})
     :body
     format-account))
 
@@ -33,7 +38,8 @@
   [account-api type token]
   (->> (http/get
          (util/conpath account-api "/accounts/" type)
-         {:oauth-token token})
+         {:oauth-token token
+          :as          :json})
     :body
     (map condense-account)))
 

@@ -1,5 +1,6 @@
 (ns org.zalando.stups.magnificent.external.user
   (:require [clj-http.client :as http]
+            [org.zalando.stups.friboo.log :as log]
             [org.zalando.stups.friboo.ring :as ring]
             [org.zalando.stups.magnificent.util :as util :refer [defmemoized]]
             [com.netflix.hystrix.core :refer [defcommand]]))
@@ -21,7 +22,9 @@
   (->>
     (http/get
       (ring/conpath kio-api "/apps/" (util/strip-robot-prefix uid))
-      {:oauth-token token})
+      {:oauth-token token
+       :as          :json})
+    :body
     format-robot-user))
 
 (defcommand fetch-human-user
@@ -29,7 +32,9 @@
   (->>
     (http/get
       (ring/conpath user-api "/employees/" uid)
-      {:oauth-token token})
+      {:oauth-token token
+       :as          :json})
+    :body
     format-human-user))
 
 (defmemoized get-human-user fetch-human-user)

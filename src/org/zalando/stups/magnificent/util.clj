@@ -5,6 +5,7 @@
 
 (defn strip-robot-prefix
   [uid & [prefix]]
+  {:pre [(not (clojure.string/blank? uid))]}
   (let [prefix (or prefix (:robot-prefix env))]
     (if (.startsWith uid prefix)
       (.substring uid (.length prefix))
@@ -12,6 +13,7 @@
 
 (defn add-robot-prefix
   [uid & [prefix]]
+  {:pre [(not (clojure.string/blank? uid))]}
   (let [prefix (or prefix (:robot-prefix env))]
     (if (.startsWith uid prefix)
       uid
@@ -19,6 +21,7 @@
 
 (defn strip-leading-slash
   [realm]
+  {:pre [(not (clojure.string/blank? realm))]}
   (if (.startsWith realm "/")
     (.substring realm 1)
     realm))
