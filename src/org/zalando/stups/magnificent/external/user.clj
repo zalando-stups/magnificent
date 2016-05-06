@@ -17,6 +17,18 @@
   {:id    (util/add-robot-prefix (:id app))
    :realm "services"})
 
+(defcommand fetch-robot-users
+  [kio-api team token]
+  (->>
+    (http/get
+      (ring/conpath kio-api "/apps")
+      {:oauth-token  token
+       :as           :json
+       :query-params {"team_id" team
+                      "active"  true}})
+    :body
+    (map format-robot-user)))
+
 (defcommand fetch-robot-user
   [kio-api uid token]
   (->>
@@ -39,3 +51,4 @@
 
 (defmemoized get-human-user fetch-human-user)
 (defmemoized get-robot-user fetch-robot-user)
+(defmemoized get-robot-users fetch-robot-users)

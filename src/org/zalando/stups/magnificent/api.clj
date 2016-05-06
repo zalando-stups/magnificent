@@ -77,12 +77,21 @@
     fring/content-type-json))
 
 (defn get-team
-  [params request]
-  (->
-    (team/get-team
-      (get-in request [:configuration :team-api])
-      (:team params)
-      (get-in request [:tokeninfo "access_token"]))
-    ring/response
-    fring/content-type-json))
-
+  [{:keys [team]} request]
+  (let [team-api  (get-in request [:configuration :team-api])
+        kio-api   (get-in request [:configuration :kio-api])
+        token     (get-in request [:tokeninfo "access_token"])
+        team-data (team/get-team
+                    team-api
+                    team
+                    token)
+        robots    (user/get-robot-users
+                    kio-api
+                    team
+                    token)
+        members   (apply conj (:members team-data) robots)]
+    (->
+      team-data
+      (assoc :members members)
+      ring/response
+      fring/content-type-json)))
