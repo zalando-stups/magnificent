@@ -1,32 +1,36 @@
 (ns org.zalando.stups.magnificent.external.user
   (:require [clj-http.client :as http]
-            [org.zalando.stups.friboo.ring :as util]
+            [org.zalando.stups.friboo.ring :as ring]
+            [org.zalando.stups.magnificent.util :as util :refer [defmemoized]]
             [com.netflix.hystrix.core :refer [defcommand]]))
 
 (defn format-human-user
   [user]
-  ({:id    (:login user)
-    :name  (:name user)
-    :email (:email user)
-    :realm "employees"}))
+  {:id    (:login user)
+   :name  (:name user)
+   :email (:email user)
+   :realm "employees"})
 
 (defn format-robot-user
-  [user]
-  (throw "Not yet implemented"))
+  [app]
+  {:id    (util/add-robot-prefix (:id app))
+   :realm "services"})
 
-(defn get-formatter
-  [realm]
-  (if (= realm "employees")
-    format-human-user
-    (if (= realm "services")
-      format-robot-user
-      (throw "Invalid realm"))))
+(defcommand fetch-robot-user
+  [kio-api uid token]
+  (->>
+    (http/get
+      (ring/conpath kio-api "/apps/" (util/strip-robot-prefix uid))
+      {:oauth-token token})
+    format-robot-user))
 
-(defcommand get-user
-  [user-api realm uid token]
-  (let [formatter (get-formatter realm)]
-    (->>
-      (http/get
-        (util/conpath user-api "/" realm "/" uid)
-        {:oauth-token token})
-      formatter)))
+(defcommand fetch-human-user
+  [user-api uid token]
+  (->>
+    (http/get
+      (ring/conpath user-api "/employees/" uid)
+      {:oauth-token token})
+    format-human-user))
+
+(defmemoized get-human-user fetch-human-user)
+(defmemoized get-robot-user fetch-robot-user)

@@ -1,6 +1,7 @@
 (ns org.zalando.stups.magnificent.external.team
   (:require [clj-http.client :as http]
             [org.zalando.stups.friboo.ring :as util]
+            [org.zalando.stups.magnificent.util :refer [defmemoized]]
             [com.netflix.hystrix.core :refer [defcommand]]))
 
 (defn condense-team
@@ -20,7 +21,7 @@
                 #(select-keys % [:id :type])
                 (:infrastructure-accounts team))})
 
-(defcommand get-teams
+(defcommand fetch-teams
   [team-api token]
   (->>
     (http/get
@@ -29,7 +30,7 @@
     :body
     (map condense-team)))
 
-(defcommand get-team
+(defcommand fetch-team
   [team-api team-id token]
   (->>
     (http/get
@@ -37,3 +38,6 @@
       {:oauth-token token})
     :body
     format-team))
+
+(defmemoized get-team fetch-team)
+(defmemoized get-teams fetch-teams)
