@@ -56,8 +56,8 @@
           (is (member? "robot_hal9000"))
           (is (member? "hermann")))))))
 
-(def default-auth-params {:authrequest {:policy "relaxed-radical-agility"
-                                        :team   "stups"}})
+(def default-auth-params {:authrequest {:policy  "relaxed-radical-agility"
+                                        :payload {:team "stups"}}})
 
 (deftest get-auth
   (testing "it should take only one policy"
@@ -80,8 +80,8 @@
     (let [calls (atom {})]
       (with-redefs [api/get-team (left-comp
                                    (track calls :get-team)
-                                   (constantly {:members [{:id    "hermann"
-                                                           :realm "employees"}]}))]
+                                   (constantly {:body {:members [{:id    "hermann"
+                                                                  :realm "employees"}]}}))]
         (let [response (api/get-auth default-auth-params default-request)]
           (is (= 1 (count (:get-team @calls))))
           (is (= 200 (:status response)))))))
@@ -90,8 +90,8 @@
     (let [calls (atom {})]
       (with-redefs [api/get-team (left-comp
                                    (track calls :get-team)
-                                   (constantly {:members [{:id    "hermann"
-                                                           :realm "employees"}]}))]
+                                   (constantly {:body {:members [{:id    "hermann"
+                                                                  :realm "employees"}]}}))]
         (let [request (assoc default-request :tokeninfo {"realm"        "services"
                                                          "uid"          "robot_hal9000"
                                                          "access_token" "token2"})]
@@ -107,13 +107,13 @@
     (let [calls (atom {})]
       (with-redefs [api/get-team (left-comp
                                    (track calls :get-team)
-                                   (constantly {:members [{:id    "guenther"
-                                                           :realm "employees"}]
-                                                :accounts [{:type "aws"
-                                                            :id "1337"}]}))
+                                   (constantly {:body {:members  [{:id    "guenther"
+                                                                   :realm "employees"}]
+                                                       :accounts [{:type "aws"
+                                                                   :id   "1337"}]}}))
                     account/get-account (left-comp
                                           (track calls :get-account)
-                                          (constantly {:members [{:id "hermann"
+                                          (constantly {:members [{:id    "hermann"
                                                                   :realm "employees"}]}))]
         (let [response (api/get-auth default-auth-params default-request)]
           (is (= 200 (:status response)))
@@ -124,13 +124,13 @@
     (let [calls (atom {})]
       (with-redefs [api/get-team (left-comp
                                    (track calls :get-team)
-                                   (constantly {:members [{:id    "guenther"
-                                                           :realm "employees"}]
-                                                :accounts [{:type "aws"
-                                                            :id "1337"}]}))
+                                   (constantly {:body {:members  [{:id    "guenther"
+                                                                   :realm "employees"}]
+                                                       :accounts [{:type "aws"
+                                                                   :id   "1337"}]}}))
                     account/get-account (left-comp
                                           (track calls :get-account)
-                                          (constantly {:members [{:id "rolf"
+                                          (constantly {:members [{:id    "rolf"
                                                                   :realm "employees"}]}))]
         (try
           (api/get-auth default-auth-params default-request)

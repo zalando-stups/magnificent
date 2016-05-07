@@ -27,8 +27,8 @@
     realm))
 
 (defn member-identifier
-  [{:keys [id realm]}]
-  (str realm "/" id))
+  [user]
+  (str (:realm user) "/" (:id user)))
 
 (defmacro defmemoized
   [name fn]

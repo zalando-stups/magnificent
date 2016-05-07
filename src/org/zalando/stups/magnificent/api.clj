@@ -96,7 +96,8 @@
 
 (defn get-auth
   [{:keys [authrequest]} request]
-  (let [{:keys [team policy]} authrequest
+  (let [{:keys [payload policy]} authrequest
+        team           (:team payload)
         realm          (util/strip-leading-slash (get-in request [:tokeninfo "realm"]))
         account-api    (get-in request [:configuration :account-api])
         token          (get-in request [:tokeninfo "access_token"])
@@ -109,11 +110,11 @@
     ; has to be an internal user
     (when-not (allowed-realm? realm)
       (api/throw-error 403 "Not an internal user"))
-    ; if user is human and not a team member, check account access
-    (let [team-data    (get-team {:team team} request)
+    (let [team-data    (:body (get-team {:team team} request))
           team-member? (set (map util/member-identifier (:members team-data)))]
-      (when (not (team-member? member-id))
+      (when-not (team-member? member-id)
         (if (= realm "employees")
+          ; if user is human and not a team member, check account access
           ; TODO: sync calls :(
           (let [account-data    (doall (map
                                          #(account/get-account
@@ -130,4 +131,4 @@
             (when-not (account-member? member-id)
               (api/throw-error 403 (str "Not a team member or access to its accounts: " member-id))))
           (api/throw-error 403 "Service user does not belong to team")))
-      (ring/response "OK"))))
+      (ring/response "\"OK\""))))

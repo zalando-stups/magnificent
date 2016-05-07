@@ -71,11 +71,16 @@ definitions:
   AuthorizationAction:
     type: object
     properties:
-      type:
+      policy:
         type: string
-        example: policy
+        example: radical-agility
       payload:
         type: object
+        properties:
+          # TODO use additionalProperties once swagger1st supports it
+          team:
+            type: string
+            example: stups
   CloudAccount:
     type: object
     properties:
