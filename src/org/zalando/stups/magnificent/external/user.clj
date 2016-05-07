@@ -31,7 +31,7 @@
 
 (defcommand fetch-robot-user
   [kio-api uid token]
-  (->>
+  (->
     (http/get
       (ring/conpath kio-api "/apps/" (util/strip-robot-prefix uid))
       {:oauth-token token
@@ -41,7 +41,7 @@
 
 (defcommand fetch-human-user
   [user-api uid token]
-  (->>
+  (->
     (http/get
       (ring/conpath user-api "/employees/" uid)
       {:oauth-token token

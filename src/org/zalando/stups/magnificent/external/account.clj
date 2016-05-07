@@ -27,10 +27,10 @@
 
 (defcommand fetch-account
   [account-api type account-id token]
-  (->> (http/get
-         (util/conpath account-api "/accounts/" type "/" account-id)
-         {:oauth-token token
-          :as          :json})
+  (-> (http/get
+        (util/conpath account-api "/accounts/" type "/" account-id)
+        {:oauth-token token
+         :as          :json})
     :body
     format-account))
 

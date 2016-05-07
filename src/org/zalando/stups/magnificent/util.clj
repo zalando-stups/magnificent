@@ -26,6 +26,10 @@
     (.substring realm 1)
     realm))
 
+(defn member-identifier
+  [{:keys [id realm]}]
+  (str realm "/" id))
+
 (defmacro defmemoized
   [name fn]
   `(def ~name

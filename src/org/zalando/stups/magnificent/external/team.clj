@@ -36,7 +36,7 @@
 
 (defcommand fetch-team
   [team-api team-id token]
-  (->>
+  (->
     (http/get
       (util/conpath team-api "/teams/" team-id)
       {:oauth-token token

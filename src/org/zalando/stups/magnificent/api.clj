@@ -3,6 +3,7 @@
             [org.zalando.stups.magnificent.util :as util]
             [ring.util.response :as ring]
             [org.zalando.stups.friboo.log :as log]
+            [io.sarnowski.swagger1st.util.api :as api]
             [org.zalando.stups.magnificent.external.team :as team]
             [org.zalando.stups.magnificent.external.user :as user]
             [org.zalando.stups.magnificent.external.account :as account]
@@ -10,10 +11,6 @@
 
 (def-http-component API "api/magnificent-api.yaml" [])
 (def default-http-configuration {:http-port 8080})
-
-(defn get-auth
-  [_ _]
-  (throw "foo"))
 
 (defn- find-user
   [realm user request]
@@ -95,3 +92,42 @@
       (assoc :members members)
       ring/response
       fring/content-type-json)))
+
+
+(defn get-auth
+  [{:keys [authrequest]} request]
+  (let [{:keys [team policy]} authrequest
+        realm          (util/strip-leading-slash (get-in request [:tokeninfo "realm"]))
+        account-api    (get-in request [:configuration :account-api])
+        token          (get-in request [:tokeninfo "access_token"])
+        user           (get-in request [:tokeninfo "uid"])
+        member-id      (util/member-identifier {:id user :realm realm})
+        allowed-realm? #{"employees" "services"}]
+    ; just to be able to introduce more policies in the future
+    (when-not (= "relaxed-radical-agility" policy)
+      (api/throw-error 404 (str "Policy " policy " not found")))
+    ; has to be an internal user
+    (when-not (allowed-realm? realm)
+      (api/throw-error 403 "Not an internal user"))
+    ; if user is human and not a team member, check account access
+    (let [team-data    (get-team {:team team} request)
+          team-member? (set (map util/member-identifier (:members team-data)))]
+      (when (not (team-member? member-id))
+        (if (= realm "employees")
+          ; TODO: sync calls :(
+          (let [account-data    (doall (map
+                                         #(account/get-account
+                                           account-api
+                                           (:type %)
+                                           (:id %)
+                                           token)
+                                         (:accounts team-data)))
+                account-member? (->> account-data
+                                  (map :members)
+                                  (apply conj)
+                                  (map util/member-identifier)
+                                  set)]
+            (when-not (account-member? member-id)
+              (api/throw-error 403 (str "Not a team member or access to its accounts: " member-id))))
+          (api/throw-error 403 "Service user does not belong to team")))
+      (ring/response "OK"))))

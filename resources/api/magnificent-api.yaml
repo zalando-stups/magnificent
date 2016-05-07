@@ -94,8 +94,7 @@ definitions:
       members:
         type: array
         items:
-          type: string
-          example: npiccolotto
+          $ref: '#/definitions/CondensedUser'
       owner:
         type: string
         example: stups
