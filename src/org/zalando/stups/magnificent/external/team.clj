@@ -25,11 +25,13 @@
                 (:infrastructure-accounts team))})
 
 (defcommand fetch-teams
-  [team-api token]
+  [team-api token & [user]]
   (->>
     (http/get
       (util/conpath team-api "/teams")
       {:oauth-token token
+       :query-params (when user
+                       {"member" user})
        :as          :json})
     :body
     (map condense-team)))

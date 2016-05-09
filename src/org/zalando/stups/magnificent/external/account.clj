@@ -35,10 +35,12 @@
     format-account))
 
 (defcommand fetch-accounts
-  [account-api type token]
+  [account-api type token & [user]]
   (->> (http/get
          (util/conpath account-api "/accounts/" type)
          {:oauth-token token
+          :query-params (when user
+                          {"member" user})
           :as          :json})
     :body
     (map condense-account)))

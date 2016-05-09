@@ -30,6 +30,14 @@
   [user]
   (str (:realm user) "/" (:id user)))
 
+(defn account-member?
+  [account member-id]
+  (let [member? (->> account
+                  :members
+                  (map member-identifier)
+                  set)]
+    (member? member-id)))
+
 (defmacro defmemoized
   [name fn]
   `(def ~name

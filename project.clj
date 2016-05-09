@@ -9,6 +9,7 @@
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [clj-http "2.1.0"]
+                 [org.clojure/core.async "0.2.374"]
                  [org.zalando.stups/friboo "1.7.0"]]
 
   :plugins [[io.sarnowski/lein-docker "1.1.0"]
