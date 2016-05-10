@@ -129,6 +129,7 @@
             (when (zero? nr-of-accounts)
               ; no accounts to look through
               (api/throw-error 403 (str "Not a team member: " member-id)))
+            ; start fetching accounts async
             (doseq [account accounts]
               (go
                 (put! channel (account/get-account
@@ -136,12 +137,12 @@
                                 (:type account)
                                 (:id account)
                                 token))))
+            ; wait for them sync one by one
             (loop [account-data (<!! channel)
                    counter      1]
-              (let [is-member? (util/account-member? account-data member-id)]
+              (when-not (util/account-member? account-data member-id)
                 ; throw when we're at the last account already and user is not a member
-                (when (and (= counter nr-of-accounts)
-                        (not is-member?))
+                (when (and (= counter nr-of-accounts))
                   (api/throw-error 403 (str "Not a team member or no access to its accounts: " member-id)))
                 ; recur when there is at least one more account to look at
                 (when (< counter nr-of-accounts)
