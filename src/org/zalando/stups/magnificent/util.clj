@@ -6,7 +6,7 @@
 (defn strip-robot-prefix
   [uid & [prefix]]
   {:pre [(not (clojure.string/blank? uid))]}
-  (let [prefix (or prefix (:robot-prefix env))]
+  (let [prefix (or prefix (:robot-prefix env) "")]
     (if (.startsWith uid prefix)
       (.substring uid (.length prefix))
       uid)))
@@ -14,7 +14,7 @@
 (defn add-robot-prefix
   [uid & [prefix]]
   {:pre [(not (clojure.string/blank? uid))]}
-  (let [prefix (or prefix (:robot-prefix env))]
+  (let [prefix (or prefix (:robot-prefix env) "")]
     (if (.startsWith uid prefix)
       uid
       (str prefix uid))))

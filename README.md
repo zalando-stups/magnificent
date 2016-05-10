@@ -2,15 +2,16 @@
 
 [![Build Status](https://travis-ci.org/zalando-stups/magnificent.svg?branch=master)](https://travis-ci.org/zalando-stups/magnificent)
 
-magnificent is the reference implementation for the [STUPS authorization dependency spec](https://github.com/zalando-stups/dependency-spec).
+Magnificent provides the API for user, team and account information to STUPS services. It also encapsulates common authorization logic among them.
 
 ## Configuring
 
-* `HTTP_TEAM_API`
-* `HTTP_USER_API`
-* `HTTP_ACCOUNT_API`
-* `HTTP_PORT`
-* `HTTP_TOKENINFO_URL`
+* `HTTP_PORT`: Port to run magnificent on. Defaults to 8080.
+* `ROBOT_PREFIX`: Prefix for robot users, defaults to `""`.
+* `HTTP_TEAM_API`: Base URL of Team API, no default.
+* `HTTP_USER_API`: Base URL of User API, no default.
+* `HTTP_ACCOUNT_API`: Base URL of Account API, no default.
+* `HTTP_TOKENINFO_URL`: URL where to check OAuth tokens, no default.
 
 ## Building
 
