@@ -1,5 +1,6 @@
 approvals:
   minimum: 1
+  pattern: "^(:\\+1:|👍)$"
   from:
     orgs:
       - zalando
