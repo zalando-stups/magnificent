@@ -2,31 +2,16 @@
 
 [![Build Status](https://travis-ci.org/zalando-stups/magnificent.svg?branch=master)](https://travis-ci.org/zalando-stups/magnificent)
 
-magnificent is the reference implementation for the [STUPS authorization dependency spec](https://github.com/zalando-stups/dependency-spec).
+Magnificent provides the API for user, team and account information to STUPS services. It also encapsulates common authorization logic among them.
 
-## Download
+## Configuring
 
-Releases are pushed as Docker images in the [public Docker registry](https://registry.hub.docker.com/u/stups/magnificent/):
-
-* Image: [stups/magnificent](https://registry.hub.docker.com/u/stups/magnificent/tags/manage/)
-
-You can run magnificent by starting it with Docker:
-
-    $ docker run -it stups/magnificent
-
-## Configuration
-
-At its heart, magnificent is a rule engine to authorize all API requests from the STUPS infrastructure. It is using
-[core.logic](https://github.com/clojure/core.logic) for evaluating the rule set. Consider writing an own configuration
-for your organisation and plug it into magnificent.
-
-### How to write an own configuration
-
-TODO: use "radical-agility" as base for modification, explain core.logic briefly, explain defrule syntax
-
-### How to activate the new configuration
-
-TODO: add to Docker image, pass "ruleset" configuration as start parameter
+* `HTTP_PORT`: Port to run magnificent on. Defaults to 8080.
+* `ROBOT_PREFIX`: Prefix for robot users, defaults to `""`.
+* `HTTP_TEAM_API`: Base URL of Team API, no default.
+* `HTTP_USER_API`: Base URL of User API, no default.
+* `HTTP_ACCOUNT_API`: Base URL of Account API, no default.
+* `HTTP_TOKENINFO_URL`: URL where to check OAuth tokens, no default.
 
 ## Building
 
