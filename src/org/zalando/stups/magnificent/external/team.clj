@@ -1,6 +1,7 @@
 (ns org.zalando.stups.magnificent.external.team
   (:require [clj-http.client :as http]
-            [org.zalando.stups.friboo.ring :as util]
+            [slingshot.slingshot :refer [try+]]
+            [org.zalando.stups.friboo.ring :as r]
             [org.zalando.stups.magnificent.util :refer [defmemoized]]
             [com.netflix.hystrix.core :refer [defcommand]]))
 
@@ -25,14 +26,23 @@
                 (:infrastructure-accounts team))})
 
 (defcommand fetch-teams
-  [team-api token & [user]]
+  [team-api token]
   (->>
     (http/get
-      (util/conpath team-api "/teams")
+      (r/conpath team-api "/teams")
       {:oauth-token token
-       :query-params (when user
-                       {"member" user})
        :as          :json})
+    :body
+    (map condense-team)))
+
+(defcommand fetch-human-teams
+  [team-api token user]
+  (->>
+    (http/get
+      (r/conpath team-api "/teams")
+      {:oauth-token  token
+       :query-params {:member user}
+       :as           :json})
     :body
     (map condense-team)))
 
@@ -40,7 +50,7 @@
   [team-api team-id token]
   (->
     (http/get
-      (util/conpath team-api "/teams/" team-id)
+      (r/conpath team-api "/teams/" team-id)
       {:oauth-token token
        :as          :json})
     :body
@@ -48,3 +58,4 @@
 
 (defmemoized get-team fetch-team)
 (defmemoized get-teams fetch-teams)
+(defmemoized get-human-teams fetch-human-teams)

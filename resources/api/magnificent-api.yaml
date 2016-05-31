@@ -259,6 +259,10 @@ paths:
       security:
         - oauth2: [uid]
       parameters:
+        - name: realm
+          in: query
+          type: string
+          description: Realm for the "user" parameter
         - name: user
           in: query
           type: string

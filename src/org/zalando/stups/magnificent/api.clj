@@ -1,7 +1,9 @@
 (ns org.zalando.stups.magnificent.api
   (:require [org.zalando.stups.friboo.system.http :refer [def-http-component]]
-            [org.zalando.stups.magnificent.util :as util]
+            [org.zalando.stups.magnificent.util :as util :refer [defmemoized]]
+            [com.netflix.hystrix.core :refer [defcommand]]
             [ring.util.response :as ring]
+            [clj-http.client :as http]
             [org.zalando.stups.friboo.log :as log]
             [clojure.core.async :refer [put! chan <!! go]]
             [io.sarnowski.swagger1st.util.api :as api]
@@ -14,21 +16,60 @@
 (def-http-component API "api/magnificent-api.yaml" [])
 (def default-http-configuration {:http-port 8080})
 
+(defcommand fetch-robot-teams
+  "Strip robot prefix, go to Kio, get team, fetch team/account"
+  [team-api account-api kio-api token user]
+  (let [app-id             (util/strip-robot-prefix user)
+        kio-resp           (http/get
+                             (fring/conpath kio-api "/apps/" app-id)
+                             {:oauth-token token
+                              :as          :json})
+        team-or-account-id (get-in kio-resp [:body :team-id])]
+    (try+
+      (->
+        (team/get-team team-api team-or-account-id token)
+        :body
+        condense-team
+        vector))
+    (catch [:status 404]
+           ; not a team!?
+           (let [account-resp (account/get-account account-api team-or-account-id token)
+                 owning-team  (get-in account-resp [:body :owner])]
+             (try
+               (->
+                 (fetch-team team-api owning-team token)
+                 :body
+                 condense-team
+                 vector)
+               (catch Exception _
+                 []))))))
+
+(defmemoized get-robot-teams fetch-robot-teams)
+
 (defn- find-user
   [realm user request]
-  (let [user-api (get-in request [:configuration :user-api])
-        kio-api  (get-in request [:configuration :kio-api])
-        token    (get-in request [:tokeninfo "access_token"])]
-    (if (= realm "employees")
-      (user/get-human-user
-        user-api
-        user
-        token)
-      (if (= realm "services")
-        (user/get-robot-user
-          kio-api
-          user
-          token)))))
+  (let [user-api-url (get-in request [:configuration :user-api])
+        kio-api-url  (get-in request [:configuration :kio-api])
+        token        (get-in request [:tokeninfo "access_token"])]
+    (condp = realm
+      "employees" (user/get-human-user
+                    user-api-url
+                    user
+                    token)
+      "services" (user/get-robot-user
+                   kio-api
+                   user
+                   token))))
+
+(defn find-teams
+  [realm user request]
+  (let [team-api-url    (get-in request [:configuration :team-api])
+        kio-api-url     (get-in request [:configuration :kio-api])
+        account-api-url (get-in request [:configuration :account-api])
+        token           (get-in request [:tokeninfo "access_token"])]
+    (condp = realm
+      "employees" (team/get-teams team-api-url token user)
+      "services" (get-robot-teams team-api-url account-api-url kio-api-url token user))))
 
 (defn get-user
   [{:keys [realm user]} request]
@@ -68,14 +109,16 @@
     fring/content-type-json))
 
 (defn get-teams
-  [{:keys [user]} request]
-  (->
-    (team/get-teams
-      (get-in request [:configuration :team-api])
-      (get-in request [:tokeninfo "access_token"])
-      user)
-    ring/response
-    fring/content-type-json))
+  [{:keys [user realm]} request]
+  (let [teams (if (and user realm)
+                (find-teams realm user request)
+                (team/get-teams
+                  (get-in request [:configuration :team-api])
+                  (get-in request [:tokeninfo "access_token"])))]
+    (->
+      teams
+      ring/response
+      fring/content-type-json)))
 
 (defn get-team
   [{:keys [team]} request]
