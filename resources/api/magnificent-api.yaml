@@ -89,7 +89,7 @@ definitions:
         example: '1341351515'
       name:
         type: string
-        example: stups
+        example: stups-test
       disabled:
         type: boolean
         example: false

@@ -68,7 +68,6 @@
                               :as          :json})
         team-or-account-id (get-in kio-resp [:body :team_id])]
     (try+
-      (log/info (str "Fetching team " team-or-account-id " for " app-id "(" user ")"))
       (->
         (http/get
           (r/conpath team-api "/teams/" team-or-account-id)
@@ -79,10 +78,8 @@
         vector)
       (catch [:status 404] []
         ; not a team!?
-        (log/info (str "Is this an account? " team-or-account-id))
         (let [account-resp (account/get-account account-api "aws" team-or-account-id token)
               owning-team  (:owner account-resp)]
-          (log/info (str "Owning team is " owning-team))
           (try
             (->
               (http/get

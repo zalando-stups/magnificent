@@ -4,6 +4,7 @@
             [ring.util.response :as ring]
             [org.zalando.stups.friboo.log :as log]
             [clojure.core.async :refer [put! chan <!! go]]
+            [slingshot.slingshot :refer [try+]]
             [io.sarnowski.swagger1st.util.api :as api]
             [org.zalando.stups.magnificent.external.team :as team]
             [org.zalando.stups.magnificent.external.user :as user]
@@ -20,14 +21,20 @@
         kio-api-url  (get-in request [:configuration :kio-api])
         token        (get-in request [:tokeninfo "access_token"])]
     (condp = realm
-      "employees" (user/get-human-user
-                    user-api-url
-                    user
-                    token)
-      "services" (user/get-robot-user
-                   kio-api-url
-                   user
-                   token))))
+      "employees" (try+
+                    (user/get-human-user
+                      user-api-url
+                      user
+                      token)
+                    (catch [:status 404] []
+                      (api/throw-error 404 "No such user" {:realm realm :user user})))
+      "services" (try+
+                   (user/get-robot-user
+                     kio-api-url
+                     user
+                     token)
+                   (catch [:status 404] []
+                     (api/throw-error 404 "No such user" {:realm realm :user user}))))))
 
 (defn find-teams
   [realm user request]
@@ -68,11 +75,14 @@
 (defn get-account
   [{:keys [type account]} request]
   (->
-    (account/get-account
-      (get-in request [:configuration :account-api])
-      type
-      account
-      (get-in request [:tokeninfo "access_token"]))
+    (try+
+      (account/get-account
+        (get-in request [:configuration :account-api])
+        type
+        account
+        (get-in request [:tokeninfo "access_token"]))
+      (catch [:status 404] []
+        (api/throw-error 404 "No such account" {:type type :account account})))
     ring/response
     fring/content-type-json))
 
@@ -93,10 +103,13 @@
   (let [team-api  (get-in request [:configuration :team-api])
         kio-api   (get-in request [:configuration :kio-api])
         token     (get-in request [:tokeninfo "access_token"])
-        team-data (team/get-team
-                    team-api
-                    team
-                    token)
+        team-data (try+
+                    (team/get-team
+                      team-api
+                      team
+                      token)
+                    (catch [:status 404] []
+                      (api/throw-error 404 "No such team" {:team team})))
         robots    (user/get-robot-users
                     kio-api
                     team
