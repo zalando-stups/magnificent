@@ -23,7 +23,7 @@
 
 (defn condense-account
   [account]
-  (select-keys account [:id :type]))
+  (select-keys account [:id :type :disabled :owner]))
 
 (defcommand fetch-account
   [account-api type account-id token]
