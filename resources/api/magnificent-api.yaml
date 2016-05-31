@@ -112,7 +112,13 @@ definitions:
         example: '2553545114'
       type:
         type: string
-        example: aws
+        example: aws#
+      disabled:
+        type: boolean
+        example: true
+      owner:
+        type: string
+        example: stups
 
 parameters:
   UserRealm:
