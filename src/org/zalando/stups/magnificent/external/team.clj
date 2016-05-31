@@ -2,8 +2,11 @@
   (:require [clj-http.client :as http]
             [slingshot.slingshot :refer [try+]]
             [org.zalando.stups.friboo.ring :as r]
+            [org.zalando.stups.friboo.log :as log]
+            [org.zalando.stups.magnificent.external.account :as account]
             [org.zalando.stups.magnificent.util :refer [defmemoized]]
-            [com.netflix.hystrix.core :refer [defcommand]]))
+            [com.netflix.hystrix.core :refer [defcommand]]
+            [org.zalando.stups.magnificent.util :as util]))
 
 (defn condense-team
   [team]
@@ -24,6 +27,15 @@
    :accounts  (map
                 #(select-keys % [:id :type])
                 (:infrastructure-accounts team))})
+(defcommand fetch-team
+  [team-api team-id token]
+  (->
+    (http/get
+      (r/conpath team-api "/teams/" team-id)
+      {:oauth-token token
+       :as          :json})
+    :body
+    format-team))
 
 (defcommand fetch-teams
   [team-api token]
@@ -46,16 +58,44 @@
     :body
     (map condense-team)))
 
-(defcommand fetch-team
-  [team-api team-id token]
-  (->
-    (http/get
-      (r/conpath team-api "/teams/" team-id)
-      {:oauth-token token
-       :as          :json})
-    :body
-    format-team))
+(defcommand fetch-robot-teams
+  "Strip robot prefix, go to Kio, get team, fetch team/account"
+  [team-api account-api kio-api token user]
+  (let [app-id             (util/strip-robot-prefix user)
+        kio-resp           (http/get
+                             (r/conpath kio-api "/apps/" app-id)
+                             {:oauth-token token
+                              :as          :json})
+        team-or-account-id (get-in kio-resp [:body :team_id])]
+    (try+
+      (log/info (str "Fetching team " team-or-account-id " for " app-id "(" user ")"))
+      (->
+        (http/get
+          (r/conpath team-api "/teams/" team-or-account-id)
+          {:oauth-token token
+           :as          :json})
+        :body
+        condense-team
+        vector)
+      (catch [:status 404] []
+        ; not a team!?
+        (log/info (str "Is this an account? " team-or-account-id))
+        (let [account-resp (account/get-account account-api "aws" team-or-account-id token)
+              owning-team  (:owner account-resp)]
+          (log/info (str "Owning team is " owning-team))
+          (try
+            (->
+              (http/get
+                (r/conpath team-api "/teams/" owning-team)
+                {:oauth-token token
+                 :as          :json})
+              :body
+              condense-team
+              vector)
+            (catch Exception _
+              [])))))))
 
 (defmemoized get-team fetch-team)
 (defmemoized get-teams fetch-teams)
 (defmemoized get-human-teams fetch-human-teams)
+(defmemoized get-robot-teams fetch-robot-teams)
