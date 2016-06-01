@@ -20,7 +20,7 @@
   (let [user-api-url (get-in request [:configuration :user-api])
         kio-api-url  (get-in request [:configuration :kio-api])
         token        (get-in request [:tokeninfo "access_token"])]
-    (condp = realm
+    (case realm
       "employees" (try+
                     (user/get-human-user
                       user-api-url
@@ -42,7 +42,7 @@
         kio-api-url     (get-in request [:configuration :kio-api])
         account-api-url (get-in request [:configuration :account-api])
         token           (get-in request [:tokeninfo "access_token"])]
-    (condp = realm
+    (case realm
       "employees" (team/get-human-teams team-api-url token user)
       "services" (team/get-robot-teams team-api-url account-api-url kio-api-url token user))))
 
