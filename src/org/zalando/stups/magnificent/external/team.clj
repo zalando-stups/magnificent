@@ -78,9 +78,9 @@
         vector)
       (catch [:status 404] []
         ; not a team!?
-        (let [account-resp (account/get-account account-api "aws" team-or-account-id token)
-              owning-team  (:owner account-resp)]
-          (try
+        (try+
+          (let [account-resp (account/get-account account-api "aws" team-or-account-id token)
+                owning-team  (:owner account-resp)]
             (->
               (http/get
                 (r/conpath team-api "/teams/" owning-team)
@@ -88,9 +88,9 @@
                  :as          :json})
               :body
               condense-team
-              vector)
-            (catch Exception _
-              [])))))))
+              vector))
+          (catch [:status 404] []
+            []))))))
 
 (defmemoized get-team fetch-team)
 (defmemoized get-teams fetch-teams)
