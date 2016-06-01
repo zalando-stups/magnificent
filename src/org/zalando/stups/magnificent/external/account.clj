@@ -12,6 +12,7 @@
        :name
        :disabled
        :type
+       :owner
        :members])
     [:members]
     (fn [members]

@@ -89,7 +89,7 @@ definitions:
         example: '1341351515'
       name:
         type: string
-        example: stups
+        example: stups-test
       disabled:
         type: boolean
         example: false
@@ -265,6 +265,10 @@ paths:
       security:
         - oauth2: [uid]
       parameters:
+        - name: realm
+          in: query
+          type: string
+          description: Realm for the "user" parameter
         - name: user
           in: query
           type: string
