@@ -22,18 +22,22 @@
         token        (get-in request [:tokeninfo "access_token"])]
     (case realm
       "employees" (try+
+                    (log/debug "Fetching user: %s" {:realm realm :user user})
                     (user/get-human-user
                       user-api-url
                       user
                       token)
                     (catch [:status 404] []
+                      (log/warn "No such user: %s" {:realm realm :user user})
                       (api/throw-error 404 "No such user" {:realm realm :user user})))
       "services" (try+
+                   (log/debug "Fetching user: %s" {:realm realm :user user})
                    (user/get-robot-user
                      kio-api-url
                      user
                      token)
                    (catch [:status 404] []
+                     (log/warn "No such user: %s" {:realm realm :user user})
                      (api/throw-error 404 "No such user" {:realm realm :user user}))))))
 
 (defn find-teams
@@ -43,8 +47,12 @@
         account-api-url (get-in request [:configuration :account-api])
         token           (get-in request [:tokeninfo "access_token"])]
     (case realm
-      "employees" (team/get-human-teams team-api-url token user)
-      "services" (team/get-robot-teams team-api-url account-api-url kio-api-url token user))))
+      "employees" (do
+                    (log/debug "Fetching teams: %s" {:realm realm :user user})
+                    (team/get-human-teams team-api-url token user))
+      "services" (do
+                   (log/debug "Fetching teams: %s" {:realm realm :user user})
+                   (team/get-robot-teams team-api-url account-api-url kio-api-url token user)))))
 
 (defn get-user
   [{:keys [realm user]} request]
@@ -64,6 +72,7 @@
 (defn get-accounts
   [{:keys [type user]} request]
   (->
+    (log/debug "Fetching accounts: %s" {:user user :type type :realm "employees"})
     (account/get-accounts
       (get-in request [:configuration :account-api])
       type
@@ -76,12 +85,14 @@
   [{:keys [type account]} request]
   (->
     (try+
+      (log/debug "Fetching account: %s" {:type type :account account})
       (account/get-account
         (get-in request [:configuration :account-api])
         type
         account
         (get-in request [:tokeninfo "access_token"]))
       (catch [:status 404] []
+        (log/warn "No such account: %s" {:type type :account account})
         (api/throw-error 404 "No such account" {:type type :account account})))
     ring/response
     fring/content-type-json))
@@ -90,9 +101,11 @@
   [{:keys [user realm]} request]
   (let [teams (if (and user realm)
                 (find-teams realm user request)
-                (team/get-teams
-                  (get-in request [:configuration :team-api])
-                  (get-in request [:tokeninfo "access_token"])))]
+                (do
+                  (log/debug "Fetching teams")
+                  (team/get-teams
+                    (get-in request [:configuration :team-api])
+                    (get-in request [:tokeninfo "access_token"]))))]
     (->
       teams
       ring/response
@@ -104,11 +117,13 @@
         kio-api   (get-in request [:configuration :kio-api])
         token     (get-in request [:tokeninfo "access_token"])
         team-data (try+
+                    (log/debug "Fetching team: %s" {:team team})
                     (team/get-team
                       team-api
                       team
                       token)
                     (catch [:status 404] []
+                      (log/warn "No such team: %s" {:team team})
                       (api/throw-error 404 "No such team" {:team team})))
         robots    (user/get-robot-users
                     kio-api
@@ -133,9 +148,11 @@
         allowed-realm? #{"employees" "services"}]
     ; just to be able to introduce more policies in the future
     (when-not (= "relaxed-radical-agility" policy)
+      (log/warn "Unknown policy: %s" {:policy policy})
       (api/throw-error 404 (str "Policy " policy " not found")))
     ; has to be an internal user
     (when-not (allowed-realm? realm)
+      (log/warn "Invalid realm: %s" {:realm realm})
       (api/throw-error 403 "Not an internal user"))
     (let [team-data    (:body (get-team {:team team} request))
           team-member? (->>
@@ -145,14 +162,17 @@
                          set)
           accounts     (:accounts team-data)]
       (if (team-member? member-id)
-        (ring/response "\"OK\"")
+        (do
+          (log/info "Access granted: %s" {:reason "Team member" :team team :member-id member-id})
+          (ring/response "\"OK\""))
         (if (= realm "employees")
           ; if user is human and not a team member, check account access
           (let [channel        (chan)
                 nr-of-accounts (count accounts)]
             (when (zero? nr-of-accounts)
               ; no accounts to look through
-              (api/throw-error 403 (str "Not a team member: " member-id)))
+              (log/info "Access rejected: %s" {:reason "Not a team member and team has no accounts" :team team :member-id member-id})
+              (api/throw-error 403 "Not a team member." {:member-id member-id :team team}))
             ; start fetching accounts async
             (doseq [account accounts]
               (go
@@ -167,12 +187,14 @@
               (when-not (util/account-member? account-data member-id)
                 ; throw when we're at the last account already and user is not a member
                 (when (and (= counter nr-of-accounts))
-                  (api/throw-error 403 (str "Not a team member or no access to its accounts: " member-id)))
+                  (log/info "Access rejected: %s" {:reason "No access to any team account" :team team :member-id member-id})
+                  (api/throw-error 403 "Not a team member or no access to its accounts." {:member-id member-id :team team}))
                 ; recur when there is at least one more account to look at
                 (when (< counter nr-of-accounts)
                   (recur
                     (<!! channel)
                     (inc counter)))))
+            (log/info "Access granted: %s" {:reason "Access to at least one team account" :member-id member-id :team team})
             (ring/response "\"OK\""))
           ; else just reject
-          (api/throw-error 403 "Service user does not belong to team"))))))
+          (api/throw-error 403 "Service user does not belong to team" {:member-id member-id :team team}))))))
