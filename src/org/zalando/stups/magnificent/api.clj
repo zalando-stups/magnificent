@@ -173,7 +173,7 @@
                          :members
                          (map util/member-identifier)
                          set)
-          accounts     (:accounts team-data)]
+          accounts     (get team-data :accounts [])]
       (if (team-member? member-id)
         (do
           (log/info "Access granted: %s" {:reason "Team member" :team team :member-id member-id})
