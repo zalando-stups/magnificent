@@ -136,6 +136,19 @@
       ring/response
       fring/content-type-json)))
 
+(defn get-team-or-account
+  [team-or-account request]
+  (try+
+    (:body (get-team {:team team-or-account} request))
+    (catch [:http-code 404] []
+      (try+
+        (let [account (:body (get-account {:type "aws" :account team-or-account} request))]
+          (log/warn "Team is actually an account: %s" {:team-or-account team-or-account})
+          account)
+        (catch [:http-code 404] []
+          (log/warn "No such team or account: %s" {:team-or-account team-or-account})
+          {})))))
+
 (defn get-auth
   [{:keys [authrequest]} request]
   (let [{:keys [payload policy]} authrequest
@@ -154,13 +167,13 @@
     (when-not (allowed-realm? realm)
       (log/warn "Invalid realm: %s" {:realm realm})
       (api/throw-error 403 "Not an internal user"))
-    (let [team-data    (:body (get-team {:team team} request))
+    (let [team-data    (get-team-or-account team request)
           team-member? (->>
                          team-data
                          :members
                          (map util/member-identifier)
                          set)
-          accounts     (:accounts team-data)]
+          accounts     (get team-data :accounts [])]
       (if (team-member? member-id)
         (do
           (log/info "Access granted: %s" {:reason "Team member" :team team :member-id member-id})

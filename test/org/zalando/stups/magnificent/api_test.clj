@@ -106,6 +106,20 @@
           (is (= 1 (count (:get-team @calls))))
           (is (= 1 (count (:get-account @calls))))))))
 
+  (testing "it should fall back to account logic if team does not exist"
+    (let [calls (atom {})]
+      (with-redefs [api/get-team (comp
+                                   (h/throwing+ "No such team" {:http-code 404})
+                                   (h/track calls :get-team))
+                    api/get-account (comp
+                                      (constantly {:body {:members [{:id "hermann"
+                                                                     :realm "employees"}]}})
+                                      (h/track calls :get-account))]
+        (let [response (api/get-auth default-auth-params default-request)]
+          (is (= 200 (:status response)))
+          (is (= 1 (count (:get-team @calls))))
+          (is (= 1 (count (:get-account @calls))))))))
+
   (testing "it should not accept employees without account access"
     (let [calls (atom {})]
       (with-redefs [api/get-team (comp
