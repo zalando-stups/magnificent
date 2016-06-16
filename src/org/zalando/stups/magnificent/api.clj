@@ -149,7 +149,7 @@
           (log/warn "No such team or account: %s" {:team-or-account team-or-account})
           {})))))
 
-(defn get-auth
+(defn post-auth
   [{:keys [authrequest]} request]
   (let [{:keys [payload policy]} authrequest
         team           (:team payload)
@@ -211,3 +211,7 @@
             (ring/response "\"OK\""))
           ; else just reject
           (api/throw-error 403 "Service user does not belong to team" {:member-id member-id :team team}))))))
+
+(defn get-auth
+  [params request]
+  (post-auth params request))

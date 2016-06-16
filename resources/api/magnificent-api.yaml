@@ -12,6 +12,16 @@ consumes:
 produces:
   - application/json
 
+tags:
+  - name: user
+    description: user information
+  - name: team
+    description: team information
+  - name: account
+    description: account information
+  - name: auth
+    description: Make authorization requests
+
 definitions:
   User:
     type: object
@@ -175,8 +185,24 @@ paths:
 
   '/auth':
     get:
-      summary: Request authorization to do something. User information is provided in Authorization header.
+      tags:
+        - auth
+      summary: DEPRECATED, USE POST METHOD. Request authorization to do something. User information is provided in Authorization header.
       operationId: org.zalando.stups.magnificent.api/get-auth
+      security:
+        - oauth2: [uid]
+      parameters:
+        - $ref: '#/parameters/AuthorizationRequest'
+      responses:
+        200:
+          description: If request was granted
+        403:
+          description: If request was not granted
+    post:
+      tags:
+        - auth
+      summary: Request authorization to do something. User information is provided in Authorization header.
+      operationId: org.zalando.stups.magnificent.api/post-auth
       security:
         - oauth2: [uid]
       parameters:
@@ -191,6 +217,8 @@ paths:
 
   '/users/{realm}/{user}':
     get:
+      tags:
+        - user
       summary: Get information about a user
       operationId: org.zalando.stups.magnificent.api/get-user
       security:
@@ -208,6 +236,8 @@ paths:
 
   '/users/self':
     get:
+      tags:
+        - user
       summary: Get information about the user this token belongs to
       operationId: org.zalando.stups.magnificent.api/get-user-self
       security:
@@ -222,6 +252,8 @@ paths:
 
   '/accounts/{type}':
     get:
+      tags:
+        - account
       summary: List all accounts
       operationId: org.zalando.stups.magnificent.api/get-accounts
       security:
@@ -241,6 +273,8 @@ paths:
               $ref: '#/definitions/CloudAccount'
   '/accounts/{type}/{account}':
     get:
+      tags:
+        - account
       summary: Get information about one account
       operationId: org.zalando.stups.magnificent.api/get-account
       security:
@@ -260,6 +294,8 @@ paths:
 
   '/teams':
     get:
+      tags:
+        - team
       summary: List all teams
       operationId: org.zalando.stups.magnificent.api/get-teams
       security:
@@ -282,6 +318,8 @@ paths:
               $ref: '#/definitions/CondensedTeam'
   '/teams/{team}':
     get:
+      tags:
+        - team
       summary: Get information about one team
       operationId: org.zalando.stups.magnificent.api/get-team
       security:
