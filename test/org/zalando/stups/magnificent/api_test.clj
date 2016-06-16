@@ -48,7 +48,7 @@
 (deftest get-auth
   (testing "it should take only one policy"
     (try
-      (api/get-auth {:authrequest {:policy "foo"}} default-request)
+      (api/post-auth {:authrequest {:policy "foo"}} default-request)
       (is false)
       (catch Exception e
         (is (= (:http-code (ex-data e)) 404))
@@ -56,7 +56,7 @@
 
   (testing "it should not answer to requests by externals"
     (try
-      (api/get-auth default-auth-params (assoc-in default-request [:tokeninfo "realm"] "customer"))
+      (api/post-auth default-auth-params (assoc-in default-request [:tokeninfo "realm"] "customer"))
       (is false)
       (catch Exception e
         (is (= (:http-code (ex-data e)) 403))
@@ -68,7 +68,7 @@
                                    (constantly {:body {:members [{:id    "hermann"
                                                                   :realm "employees"}]}})
                                    (h/track calls :get-team))]
-        (let [response (api/get-auth default-auth-params default-request)]
+        (let [response (api/post-auth default-auth-params default-request)]
           (is (= 1 (count (:get-team @calls))))
           (is (= 200 (:status response)))))))
 
@@ -82,7 +82,7 @@
                                                          "uid"          "robot_hal9000"
                                                          "access_token" "token2"})]
           (try
-            (api/get-auth default-auth-params request)
+            (api/post-auth default-auth-params request)
             (is false)
             (catch Exception e
               (is (= 1 (count (:get-team @calls))))
@@ -101,7 +101,7 @@
                                           (constantly {:members [{:id    "hermann"
                                                                   :realm "employees"}]})
                                           (h/track calls :get-account))]
-        (let [response (api/get-auth default-auth-params default-request)]
+        (let [response (api/post-auth default-auth-params default-request)]
           (is (= 200 (:status response)))
           (is (= 1 (count (:get-team @calls))))
           (is (= 1 (count (:get-account @calls))))))))
@@ -115,7 +115,7 @@
                                       (constantly {:body {:members [{:id "hermann"
                                                                      :realm "employees"}]}})
                                       (h/track calls :get-account))]
-        (let [response (api/get-auth default-auth-params default-request)]
+        (let [response (api/post-auth default-auth-params default-request)]
           (is (= 200 (:status response)))
           (is (= 1 (count (:get-team @calls))))
           (is (= 1 (count (:get-account @calls))))))))
@@ -133,7 +133,7 @@
                                                                   :realm "employees"}]})
                                           (h/track calls :get-account))]
         (try
-          (api/get-auth default-auth-params default-request)
+          (api/post-auth default-auth-params default-request)
           (is false)
           (catch Exception e
             (is (= (:http-code (ex-data e)) 403))
