@@ -3,7 +3,7 @@
             [org.zalando.stups.magnificent.util :as util]
             [ring.util.response :as ring]
             [org.zalando.stups.friboo.log :as log]
-            [clojure.core.async :refer [put! chan <!! go]]
+            [clojure.core.async :as a :refer [put! chan <!! go]]
             [slingshot.slingshot :refer [try+]]
             [io.sarnowski.swagger1st.util.api :as api]
             [org.zalando.stups.magnificent.external.team :as team]
@@ -187,26 +187,15 @@
               (log/info "Access rejected: %s" {:reason "Not a team member and team has no accounts" :team team :member-id member-id})
               (api/throw-error 403 "Not a team member." {:member-id member-id :team team}))
             ; start fetching accounts async
-            (doseq [account accounts]
-              (go
-                (put! channel (account/get-account
-                                account-api
-                                (:type account)
-                                (:id account)
-                                token))))
-            ; wait for them sync one by one
-            (loop [account-data (<!! channel)
-                   counter      1]
-              (when-not (util/account-member? account-data member-id)
-                ; throw when we're at the last account already and user is not a member
-                (when (and (= counter nr-of-accounts))
-                  (log/info "Access rejected: %s" {:reason "No access to any team account" :team team :member-id member-id})
-                  (api/throw-error 403 "Not a team member or no access to its accounts." {:member-id member-id :team team}))
-                ; recur when there is at least one more account to look at
-                (when (< counter nr-of-accounts)
-                  (recur
-                    (<!! channel)
-                    (inc counter)))))
+            (a/pipeline-blocking 1 channel
+                                 (map #(account/get-account account-api (:type %) (:id %) token))
+                                 (a/to-chan accounts))
+            ; collect all account data
+            (let [accounts-data (<!! (a/reduce conj [] channel))
+                  not-a-member? (comp not #(util/account-member? % member-id))]
+              (when (every? not-a-member? accounts-data)
+                (log/info "Access rejected: %s" {:reason "No access to any team account" :team team :member-id member-id})
+                (api/throw-error 403 "Not a team member or no access to its accounts." {:member-id member-id :team team})))
             (log/info "Access granted: %s" {:reason "Access to at least one team account" :member-id member-id :team team})
             (ring/response "\"OK\""))
           ; else just reject
