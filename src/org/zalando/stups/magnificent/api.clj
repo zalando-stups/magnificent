@@ -180,20 +180,22 @@
           (ring/response "\"OK\""))
         (if (= realm "employees")
           ; if user is human and not a team member, check account access
-          (let [channel        (chan)
-                nr-of-accounts (count accounts)]
+          (let [accounts-channel (chan)
+                nr-of-accounts   (count accounts)
+                chan-seq!!       (fn chan-seq!! [ch]
+                                   (when-let [v (<!! ch)] (cons v (chan-seq!! ch))))]
             (when (zero? nr-of-accounts)
               ; no accounts to look through
               (log/info "Access rejected: %s" {:reason "Not a team member and team has no accounts" :team team :member-id member-id})
               (api/throw-error 403 "Not a team member." {:member-id member-id :team team}))
-            ; start fetching accounts async
-            (a/pipeline-blocking 1 channel
+            ; start fetching accounts in parallel
+            (a/pipeline-blocking nr-of-accounts accounts-channel
                                  (map #(account/get-account account-api (:type %) (:id %) token))
                                  (a/to-chan accounts))
-            ; collect all account data
-            (let [accounts-data (<!! (a/reduce conj [] channel))
-                  not-a-member? (comp not #(util/account-member? % member-id))]
-              (when (every? not-a-member? accounts-data)
+            ; turn channel to lazy seq, apply is-a-member? check, short circuit if the check passes
+            (let [accounts-data (chan-seq!! accounts-channel)
+                  is-a-member?  #(util/account-member? % member-id)]
+              (when-not (some is-a-member? accounts-data)
                 (log/info "Access rejected: %s" {:reason "No access to any team account" :team team :member-id member-id})
                 (api/throw-error 403 "Not a team member or no access to its accounts." {:member-id member-id :team team})))
             (log/info "Access granted: %s" {:reason "Access to at least one team account" :member-id member-id :team team})
