@@ -183,7 +183,7 @@
           (let [accounts-channel (chan)
                 nr-of-accounts   (count accounts)
                 chan-seq!!       (fn chan-seq!! [ch]
-                                   (when-let [v (<!! ch)] (cons v (chan-seq!! ch))))]
+                                   (lazy-seq (when-let [v (<!! ch)] (cons v (chan-seq!! ch)))))]
             (when (zero? nr-of-accounts)
               ; no accounts to look through
               (log/info "Access rejected: %s" {:reason "Not a team member and team has no accounts" :team team :member-id member-id})
