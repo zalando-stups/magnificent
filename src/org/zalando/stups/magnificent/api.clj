@@ -3,7 +3,7 @@
             [org.zalando.stups.magnificent.util :as util]
             [ring.util.response :as ring]
             [org.zalando.stups.friboo.log :as log]
-            [clojure.core.async :refer [put! chan <!! go]]
+            [clojure.core.async :refer [put! chan <!! go thread] :as a]
             [slingshot.slingshot :refer [try+]]
             [io.sarnowski.swagger1st.util.api :as api]
             [org.zalando.stups.magnificent.external.team :as team]
@@ -112,29 +112,21 @@
       fring/content-type-json)))
 
 (defn- get-robots [team-aliases kio-api token]
-  (let [channel (chan)
-        nr-of-aliases (count team-aliases)]
-    (if (zero? nr-of-aliases)
-      []
-      (do
-        ; start fetching accounts async
-        (doseq [team team-aliases]
-          (go
-            (put! channel (user/get-robot-users
-                            kio-api
-                            team
-                            token))))
-        ; wait for them sync one by one
-        (loop [robots (<!! channel)
-               known-robots []
-               counter 1]
-          (let [all-robots (concat known-robots robots)]
-            (if (< counter nr-of-aliases)
-              (recur
-                (<!! channel)
-                all-robots
-                (inc counter))
-              all-robots)))))))
+  (if (empty? team-aliases)
+    []
+    (->> (for [team team-aliases]
+           (thread
+             (try
+               (user/get-robot-users
+                 kio-api
+                 team
+                 token)
+               (catch Exception e
+                 (log/error e "Could not fetch Kio apps for team %s" team)
+                 []))))
+         a/merge
+         (a/reduce concat [])
+         <!!)))
 
 (defn get-team
   [{:keys [team]} request]
