@@ -26,7 +26,8 @@
                 (:member team))
    :accounts  (map
                 #(select-keys % [:id :type])
-                (:infrastructure-accounts team))})
+                (:infrastructure-accounts team))
+   :aliases (:alias team)})
 (defcommand fetch-team
   [team-api team-id token]
   (->

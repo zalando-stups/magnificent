@@ -3,7 +3,7 @@
             [org.zalando.stups.magnificent.util :as util]
             [ring.util.response :as ring]
             [org.zalando.stups.friboo.log :as log]
-            [clojure.core.async :refer [put! chan <!! go]]
+            [clojure.core.async :refer [put! chan <!! go thread] :as a]
             [slingshot.slingshot :refer [try+]]
             [io.sarnowski.swagger1st.util.api :as api]
             [org.zalando.stups.magnificent.external.team :as team]
@@ -111,6 +111,23 @@
       ring/response
       fring/content-type-json)))
 
+(defn- get-robots [team-aliases kio-api token]
+  (if (empty? team-aliases)
+    []
+    (->> (for [team team-aliases]
+           (thread
+             (try
+               (user/get-robot-users
+                 kio-api
+                 team
+                 token)
+               (catch Exception e
+                 (log/error e "Could not fetch Kio apps for team %s" team)
+                 []))))
+         a/merge
+         (a/reduce concat [])
+         <!!)))
+
 (defn get-team
   [{:keys [team]} request]
   (let [team-api  (get-in request [:configuration :team-api])
@@ -125,10 +142,7 @@
                     (catch [:status 404] []
                       (log/warn "No such team: %s" {:team team})
                       (api/throw-error 404 "No such team" {:team team})))
-        robots    (user/get-robot-users
-                    kio-api
-                    team
-                    token)
+        robots (get-robots (-> team-data :aliases (conj team) set) kio-api token)
         members   (apply conj (:members team-data) robots)]
     (->
       team-data
