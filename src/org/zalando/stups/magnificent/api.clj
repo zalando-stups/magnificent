@@ -111,6 +111,31 @@
       ring/response
       fring/content-type-json)))
 
+(defn- get-robots [team-aliases kio-api token]
+  (let [channel (chan)
+        nr-of-aliases (count team-aliases)]
+    (if (zero? nr-of-aliases)
+      []
+      (do
+        ; start fetching accounts async
+        (doseq [team team-aliases]
+          (go
+            (put! channel (user/get-robot-users
+                            kio-api
+                            team
+                            token))))
+        ; wait for them sync one by one
+        (loop [robots (<!! channel)
+               known-robots []
+               counter 1]
+          (let [all-robots (concat known-robots robots)]
+            (if (< counter nr-of-aliases)
+              (recur
+                (<!! channel)
+                all-robots
+                (inc counter))
+              all-robots)))))))
+
 (defn get-team
   [{:keys [team]} request]
   (let [team-api  (get-in request [:configuration :team-api])
@@ -125,10 +150,7 @@
                     (catch [:status 404] []
                       (log/warn "No such team: %s" {:team team})
                       (api/throw-error 404 "No such team" {:team team})))
-        robots    (user/get-robot-users
-                    kio-api
-                    team
-                    token)
+        robots (get-robots (-> team-data :aliases (conj team) set) kio-api token)
         members   (apply conj (:members team-data) robots)]
     (->
       team-data
