@@ -69,6 +69,9 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/CondensedCloudAccount'
+      type:
+        type: string
+        example: official
   CondensedTeam:
     type: object
     properties:
@@ -78,6 +81,9 @@ definitions:
       full_name:
         type: string
         example: STUPS - Penguin Swarms And More
+      type:
+        type: string
+        example: official
   AuthorizationAction:
     type: object
     properties:
