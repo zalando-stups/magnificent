@@ -9,6 +9,41 @@
   {:status (or code 200)
    :body   body})
 
+(deftest get-team
+  (with-redefs [http/get (constantly
+                           (as-http-resp {:id                      "torch"
+                                          :name                    "TORCH"
+                                          :mail                    ["torch@torch.torch"]
+                                          :member                  ["mickeymouse" "donaldduck"]
+                                          :infrastructure-accounts [{:id "111122223333" :type "aws" :name "torch"}
+                                                                    {:id "444455556666" :type "aws" :name "torch-test"}]
+                                          :alias                   ["torch"]
+                                          :type                    "official"}))]
+    (let [result (team/get-team "http://team.api" "torch" "AcCe5sT0k3N")]
+      (is (= result {:id        "torch"
+                     :full_name "TORCH"
+                     :mail      ["torch@torch.torch"]
+                     :members   [{:id "mickeymouse" :realm "employees"}
+                                 {:id "donaldduck" :realm "employees"}]
+                     :accounts  [{:id "111122223333" :type "aws"}
+                                 {:id "444455556666" :type "aws"}]
+                     :aliases   ["torch"]
+                     :type      "official"})))))
+
+(deftest get-teams
+  (with-redefs [http/get (constantly
+                           (as-http-resp [{:id   "torch"
+                                           :name "TORCH"
+                                           :mail ["torch@torch.torch"]
+                                           :type "official"}
+                                          {:id   "stups"
+                                           :name "STUPS"
+                                           :mail ["stups@stups.stups"]
+                                           :type "virtual"}]))]
+    (let [result (team/get-teams "http://team.api" "AcCe5sT0k3N")]
+      (is (= result [{:id "torch" :full_name "TORCH" :type "official"}
+                     {:id "stups" :full_name "STUPS" :type "virtual"}])))))
+
 ;[team-api account-api kio-api token user]
 (deftest get-robot-teams
   (testing "should work if team-id is a team"
