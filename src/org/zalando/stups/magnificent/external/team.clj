@@ -11,7 +11,8 @@
 (defn condense-team
   [team]
   {:id        (:id team)
-   :full_name (:name team)})
+   :full_name (:name team)
+   :type      (:type team)})
 
 (defn format-team
   [team]
@@ -27,7 +28,8 @@
    :accounts  (map
                 #(select-keys % [:id :type])
                 (:infrastructure-accounts team))
-   :aliases (:alias team)})
+   :aliases   (:alias team)
+   :type      (:type team)})
 (defcommand fetch-team
   [team-api team-id token]
   (->
