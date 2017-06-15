@@ -1,7 +1,25 @@
 build_steps:
-  - desc: "Echo 'Hello Zalando'"
+  - desc: "Install Java and Leiningen"
     cmd: |
-      echo "Hello Zalando"
-  - desc: "Echo 'Hello CDP'"
+      apt-get update
+      apt-get install -y openjdk-8*
+      curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein > /usr/local/bin/lein
+      chmod +x /usr/local/bin/lein
+  - desc: "Run tests"
     cmd: |
-      echo "Hello CDP"
+      lein test
+  - desc: "Build JAR"
+    cmd: |
+      lein uberjar
+  - desc: "Build Docker Image"
+    cmd: |
+      docker build -t pierone.stups.zalan.do/stups/magnificent:${CDP_BUILD_VERSION} .
+  - desc: "Push Docker Image (if on master)"
+    cmd: |
+      IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
+      if [[ ${IS_PR_BUILD} != "true" ]]
+      then
+        docker push pierone.stups.zalan.do/stups/magnificent:${CDP_BUILD_VERSION}
+      else
+        echo "Image not pushed because the build is not a push to master"
+      fi
