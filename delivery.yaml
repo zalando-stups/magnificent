@@ -1,0 +1,28 @@
+build_steps:
+  - desc: "Install Java, Leiningen and Docker"
+    cmd: |
+      apt-get update
+      apt-get install -y openjdk-8*
+      curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein > /usr/local/bin/lein
+      chmod +x /usr/local/bin/lein
+      curl -sSL https://get.docker.com/ | sh
+  - desc: "Run tests"
+    cmd: |
+      export LEIN_ROOT="true"
+      lein test
+  - desc: "Build JAR"
+    cmd: |
+      export LEIN_ROOT="true"
+      lein uberjar
+  - desc: "Build Docker Image"
+    cmd: |
+      docker build -t pierone.stups.zalan.do/stups/magnificent:${CDP_BUILD_VERSION} .
+  - desc: "Push Docker Image (if on master)"
+    cmd: |
+      IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
+      if [[ ${IS_PR_BUILD} != "true" ]]
+      then
+        docker push pierone.stups.zalan.do/stups/magnificent:${CDP_BUILD_VERSION}
+      else
+        echo "Image not pushed because the build is not a push to master"
+      fi
