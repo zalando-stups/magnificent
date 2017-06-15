@@ -10,6 +10,7 @@ build_steps:
       lein test
   - desc: "Build JAR"
     cmd: |
+      export LEIN_ROOT="true"
       lein uberjar
   - desc: "Build Docker Image"
     cmd: |
