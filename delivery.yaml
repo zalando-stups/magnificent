@@ -1,0 +1,7 @@
+build_steps:
+  - desc: "Echo 'Hello Zalando'"
+    cmd: |
+      echo "Hello Zalando"
+  - desc: "Echo 'Hello CDP'"
+    cmd: |
+      echo "Hello CDP"
