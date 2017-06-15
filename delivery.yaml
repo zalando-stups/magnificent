@@ -1,10 +1,11 @@
 build_steps:
-  - desc: "Install Java and Leiningen"
+  - desc: "Install Java, Leiningen and Docker"
     cmd: |
       apt-get update
       apt-get install -y openjdk-8*
       curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein > /usr/local/bin/lein
       chmod +x /usr/local/bin/lein
+      curl -sSL https://get.docker.com/ | sh
   - desc: "Run tests"
     cmd: |
       lein test
