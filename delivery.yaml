@@ -8,6 +8,7 @@ build_steps:
       curl -sSL https://get.docker.com/ | sh
   - desc: "Run tests"
     cmd: |
+      export LEIN_ROOT="true"
       lein test
   - desc: "Build JAR"
     cmd: |
