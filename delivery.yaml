@@ -5,7 +5,7 @@ build_steps:
       apt-get install -y openjdk-8*
       curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein > /usr/local/bin/lein
       chmod +x /usr/local/bin/lein
-      curl -sSL https://get.docker.com/ | sh
+      curl -sSL https://delivery.cloud.zalando.com/utils/ensure-docker | sh
   - desc: "Run tests"
     cmd: |
       export LEIN_ROOT="true"
