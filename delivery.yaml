@@ -16,7 +16,7 @@ build_steps:
       lein uberjar
   - desc: "Build Docker Image"
     cmd: |
-      docker build -t pierone.stups.zalan.do/stups/magnificent:${CDP_BUILD_VERSION} .
+      docker build -t pierone.stups.zalan.do/foundation/magnificent:${CDP_BUILD_VERSION} .
   - desc: "Push Docker Image (if on master)"
     cmd: |
       IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
