@@ -22,7 +22,7 @@ build_steps:
       IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
       if [[ ${IS_PR_BUILD} != "true" ]]
       then
-        docker push pierone.stups.zalan.do/stups/magnificent:${CDP_BUILD_VERSION}
+        docker push pierone.stups.zalan.do/foundation/magnificent:${CDP_BUILD_VERSION}
       else
         echo "Image not pushed because the build is not a push to master"
       fi
